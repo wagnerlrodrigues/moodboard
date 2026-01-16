@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Moodboard – Psicologia das Cores</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #1f2933;
+      --muted: #6b7280;
+      --primary: #111827;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      padding: 16px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 16px;
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    }
+
+    label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      margin-bottom: 12px;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      font-size: 0.9rem;
+    }
+
+    button {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      font-weight: 600;
+    }
+
+    .symbols {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .symbol {
+      text-align: center;
+      padding: 12px;
+      font-size: 22px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      cursor: pointer;
+    }
+
+    .symbol.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .workspace {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .board-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    canvas {
+      width: 100%;
+      max-width: 420px;
+      aspect-ratio: 1 / 1;
+      border-radius: 16px;
+      background: #ddd;
+    }
+
+    .color-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 10px;
+    }
+
+    .color-item {
+      border-radius: 12px;
+      padding: 8px;
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #000;
+    }
+
+    @media (min-width: 900px) {
+      .workspace {
+        flex-direction: row;
+      }
+      .controls {
+        max-width: 340px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>Moodboard – Psicologia das Cores</header>
+
+<div class="app">
+
+  <div class="workspace">
+
+    <div class="card controls">
+      <label>Nome do aluno</label>
+      <input type="text" id="studentName" placeholder="Ex: João Silva">
+
+      <label>Tema</label>
+      <input type="text" id="theme" placeholder="Ex: Confiança, Ansiedade, Calma">
+
+      <label>Adicionar cor (HEX ou RGB)</label>
+      <input type="text" id="colorInput" placeholder="#3B82F6">
+
+      <label>Ou selecione a cor</label>
+      <input type="color" id="colorPicker" value="#3B82F6">
+
+      <button onclick="addColor()">Adicionar cor</button>
+
+      <label>Símbolo central</label>
+      <div class="symbols">
+        <div class="symbol active" onclick="selectSymbol(this)">●</div>
+        <div class="symbol" onclick="selectSymbol(this)">▲</div>
+        <div class="symbol" onclick="selectSymbol(this)">■</div>
+        <div class="symbol" onclick="selectSymbol(this)">✚</div>
+        <div class="symbol" onclick="selectSymbol(this)">★</div>
+      </div>
+
+      <label>Cor do símbolo</label>
+      <input type="color" id="symbolColor" value="#000000" onchange="drawBoard()">
+
+      <button onclick="downloadImage()">Baixar moodboard</button>
+    </div>
+
+    <div class="card">
+      <div class="board-wrapper">
+        <canvas id="board" width="500" height="500"></canvas>
+      </div>
+
+      <label style="margin-top:12px; display:block">Cores usadas</label>
+      <div class="color-list" id="colorList"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById('board');
+  const ctx = canvas.getContext('2d');
+
+  let colors = [];
+  let currentSymbol = '●';
+
+  function drawBoard() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const cols = Math.ceil(Math.sqrt(colors.length || 1));
+    const size = canvas.width / cols;
+
+    colors.forEach((color, index) => {
+      const x = (index % cols) * size;
+      const y = Math.floor(index / cols) * size;
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, size, size);
+
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(color, x + size / 2, y + size / 2);
+    });
+
+    // Texto superior
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(document.getElementById('theme').value || '', canvas.width / 2, 24);
+
+    ctx.font = '14px Arial';
+    ctx.fillText(document.getElementById('studentName').value || '', canvas.width / 2, canvas.height - 16);
+
+    // Símbolo
+    ctx.fillStyle = document.getElementById('symbolColor').value;
+    ctx.font = 'bold 120px Arial';
+    ctx.fillText(currentSymbol, canvas.width / 2, canvas.height / 2);
+  }
+
+  function addColor() {
+    const input = document.getElementById('colorInput');
+    const picker = document.getElementById('colorPicker');
+
+    let color = input.value || picker.value;
+    if (!color) return;
+
+    colors.push(color);
+    input.value = '';
+    picker.value = color;
+    updateColorList();
+    drawBoard();
+  }
+
+  function updateColorList() {
+    const list = document.getElementById('colorList');
+    list.innerHTML = '';
+    colors.forEach((color, index) => {
+      const div = document.createElement('div');
+      div.className = 'color-item';
+      div.style.background = color;
+      div.textContent = color;
+      div.onclick = () => {
+        const newColor = prompt('Altere o código da cor:', color);
+        if (newColor) {
+          colors[index] = newColor;
+          updateColorList();
+          drawBoard();
+        }
+      };
+      list.appendChild(div);
+    });
+  }
+
+  function selectSymbol(el) {
+    document.querySelectorAll('.symbol').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    currentSymbol = el.textContent;
+    drawBoard();
+  }
+
+  function downloadImage() {
+    const link = document.createElement('a');
+    link.download = 'moodboard_psicologia_das_cores.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
+</script>
+
+</body>
+</html>
